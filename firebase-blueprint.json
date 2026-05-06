@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product offered for sale",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["name", "description", "price", "category"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A business service offered",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "iconName": { "type": "string" }
+      },
+      "required": ["name", "description"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order for a product",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "productName", "quantity", "totalPrice", "customerName", "customerPhone", "customerAddress", "status", "createdAt"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global website content settings",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "businessName": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactPhone": { "type": "string" }
+      }
+    },
+    "ServiceRequest": {
+      "title": "ServiceRequest",
+      "description": "A request for a specific service or general contact",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "contacted", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userName", "userEmail", "message", "status", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "App user profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin"] }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Public product collection"
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Public business services"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Private customer orders"
+    },
+    "/serviceRequests/{requestId}": {
+      "schema": "ServiceRequest",
+      "description": "Service requests and contact messages"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Global app strings and settings"
+    }
+  }
+}

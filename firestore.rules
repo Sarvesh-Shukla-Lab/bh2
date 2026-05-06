@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} { allow read, write: if false; }
+
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == 'sarveshshukla485@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Validation Helpers ---
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'description', 'price', 'category']) &&
+             data.name is string && data.name.size() <= 200 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string &&
+             (!data.keys().contains('imageUrl') || (data.imageUrl is string && data.imageUrl.size() <= 1000));
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['name', 'description']) &&
+             data.name is string && data.name.size() <= 200 &&
+             data.description is string && data.description.size() <= 2000;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'productId', 'productName', 'quantity', 'totalPrice', 'customerName', 'customerPhone', 'customerAddress', 'status', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.customerName is string && data.customerName.size() <= 200 &&
+             data.customerPhone is string && data.customerPhone.size() <= 20 &&
+             data.customerAddress is string && data.customerAddress.size() <= 1000 &&
+             data.status in ['pending', 'completed', 'cancelled'] &&
+             data.quantity is number && data.quantity > 0 &&
+             data.totalPrice is number && data.totalPrice >= 0 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidSettings(data) {
+      return data.heroTitle is string && data.heroSubtitle is string;
+    }
+
+    function isValidServiceRequest(data) {
+      return data.keys().hasAll(['userName', 'userEmail', 'message', 'status', 'createdAt']) &&
+             data.userName is string && data.userName.size() <= 200 &&
+             data.userEmail is string && data.userEmail.size() <= 200 &&
+             data.message is string && data.message.size() <= 5000 &&
+             data.status in ['pending', 'contacted', 'completed'] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) &&
+             data.email is string && data.email.size() <= 200;
+    }
+
+    // --- Path Rules ---
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidSettings(incoming());
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidProduct(incoming());
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidService(incoming());
+    }
+
+    match /orders/{orderId} {
+      allow read: if isOwner(existing().userId) || isAdmin();
+      allow create: if isSignedIn() && isValidOrder(incoming());
+      allow update: if isAdmin() || (isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status']) && incoming().status == 'cancelled');
+    }
+
+    match /serviceRequests/{requestId} {
+      allow list: if isAdmin();
+      allow get: if isAdmin() || (isSignedIn() && existing().userEmail == request.auth.token.email);
+      allow create: if isValidServiceRequest(incoming());
+      allow update: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    (!incoming().diff(existing()).affectedKeys().hasAny(['role'])) ;
+      allow write: if isAdmin();
+    }
+    
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}
