@@ -22,12 +22,3 @@ export default defineConfig(({mode}) => {
     },
   };
 });
-// vite.config.js
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  // ... aapka existing config
-  build: {
-    chunkSizeWarningLimit: 1000, // Ise 1000kB (1MB) kar dein
-  },
-})
